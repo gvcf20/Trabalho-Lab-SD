@@ -1,0 +1,217 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+entity PoolControl is
+    Port ( 
+			  clock : in STD_LOGIC;
+           reset : in STD_LOGIC;
+           set_TMAX: in STD_LOGIC;
+           TMAX: in STD_LOGIC_VECTOR(2 downto 0);
+           set_TMIN: in STD_LOGIC;
+           TMIN: in STD_LOGIC_VECTOR(2 downto 0);
+           T_SENSOR : in STD_LOGIC_VECTOR(2 downto 0);
+           set_ALT: in STD_LOGIC;
+           ALT: in STD_LOGIC_VECTOR(2 downto 0);
+           ALT_SENSOR: in STD_LOGIC_VECTOR(2 downto 0);
+           PARAM: in STD_LOGIC;
+           PC: in STD_LOGIC;
+           BC: out STD_LOGIC;
+           BA: out STD_LOGIC;
+           LAD: out STD_LOGIC;
+           TMAX_LED: out STD_LOGIC_VECTOR(2 downto 0);
+           TMIN_LED: out STD_LOGIC_VECTOR(2 downto 0);
+           T_SENSOR_LED: out STD_LOGIC_VECTOR(2 downto 0);
+           ALT_LED: out STD_LOGIC_VECTOR(2 downto 0);
+           ALT_SENSOR_LED: out STD_LOGIC_VECTOR(2 downto 0)
+			  );
+end PoolControl;
+
+architecture Behavioral of PoolControl is
+	type STATE_TYPE is (INIT, S_ALTURA, S_T_MAX, S_T_MIN, P_COBERTA, CHECK, BA_ON, LAD_ON, BC_ON);
+	signal state: STATE_TYPE;
+	signal TMAX_reg, TMIN_reg, ALT_reg : std_logic_vector(2 downto 0) := (others => '0');
+	
+begin
+	
+	process(clock,reset)
+	begin
+		if reset = '1' then
+			state <= INIT;
+			BC <= '0';
+			BA <= '0';
+			LAD <= '0';
+			TMAX_LED <= TMAX_reg;
+			TMIN_LED <= TMIN_reg;
+			T_SENSOR_LED <= T_SENSOR;
+			ALT_LED <= ALT_reg;
+			ALT_SENSOR_LED <= ALT_SENSOR;
+		--elsif rising_edge(clock) then
+			
+			case state is
+				when INIT =>
+					   BC <= '0';
+					   BA <= '0';
+					   LAD <= '0';
+					   TMAX_LED <= TMAX_reg;
+					   TMIN_LED <= TMIN_reg;
+					   T_SENSOR_LED <= T_SENSOR;
+					   ALT_LED <= ALT_reg;
+						ALT_SENSOR_LED <= ALT_SENSOR;
+						if set_TMAX = '1' and set_ALT = '0' and set_TMIN = '0' then
+							state <= S_T_MAX;
+						elsif set_TMAX = '0' and set_ALT = '0' and set_TMIN = '1' then
+							state <= S_T_MIN;
+						elsif set_TMAX = '0' and set_ALT = '1' and set_TMIN = '0' then
+							state <= S_ALTURA;
+						elsif PARAM = '1' then
+							state <= P_COBERTA;
+						else
+							state <= INIT;
+						end if;
+							
+				when S_T_MAX =>
+				
+							TMAX_reg <= TMAX;
+						   BC <= '0';
+							BA <= '0';
+							LAD <= '0';
+							TMAX_LED <= TMAX_reg;
+							TMIN_LED <= TMIN_reg;
+							T_SENSOR_LED <= T_SENSOR;
+							ALT_LED <= ALT_reg;
+							ALT_SENSOR_LED <= ALT_SENSOR;
+						   if set_TMAX = '1' then
+							  state <= S_T_MAX;
+							else
+								state <= INIT;
+							end if;
+							
+				when S_T_MIN =>
+							
+						   TMIN_reg <= TMIN;
+						   BC <= '0';
+							BA <= '0';
+							LAD <= '0';
+							TMAX_LED <= TMAX_reg;
+							TMIN_LED <= TMIN_reg;
+							T_SENSOR_LED <= T_SENSOR;
+							ALT_LED <= ALT_reg;
+							ALT_SENSOR_LED <= ALT_SENSOR;
+						   if set_TMIN = '1' then
+							  state <= S_T_MIN;
+							else
+								state <= INIT;
+							end if;
+				when S_ALTURA =>
+							
+						   ALT_reg <= ALT;
+						   BC <= '0';
+							BA <= '0';
+							LAD <= '0';
+							TMAX_LED <= TMAX_reg;
+							TMIN_LED <= TMIN_reg;
+							T_SENSOR_LED <= T_SENSOR;
+							ALT_LED <= ALT_reg;
+							ALT_SENSOR_LED <= ALT_SENSOR;
+						   if set_ALT = '1' then
+							  state <= S_ALTURA;
+							else
+								state <= INIT;
+							end if;
+							
+				when P_COBERTA =>
+							
+						   BC <= '0';
+							BA <= '0';
+							LAD <= '0';
+							TMAX_LED <= TMAX_reg;
+							TMIN_LED <= TMIN_reg;
+							T_SENSOR_LED <= T_SENSOR;
+							ALT_LED <= ALT_reg;
+							ALT_SENSOR_LED <= ALT_SENSOR;
+						   ALT_SENSOR_LED <= ALT_SENSOR;
+							if PARAM = '0' then
+								state <= INIT;
+							elsif PC = '0' then
+								state <= CHECK;
+							else
+								state <= P_COBERTA;
+							end if;
+							
+				when CHECK =>
+						   BC <= '0';
+							BA <= '0';
+							LAD <= '0';
+							TMAX_LED <= TMAX_reg;
+							TMIN_LED <= TMIN_reg;
+							T_SENSOR_LED <= T_SENSOR;
+							ALT_LED <= ALT_reg;
+							ALT_SENSOR_LED <= ALT_SENSOR;
+							if ALT_SENSOR < ALT_reg then
+								state <= BA_ON;
+							elsif ALT_SENSOR > ALT_reg then
+								state <= LAD_ON;
+							elsif T_SENSOR < TMIN_reg then
+								state <= BC_ON;
+							else
+								state <= CHECK;
+							end if;
+				
+				when BA_ON =>
+				
+							BC <= '0';
+							BA <= '1';
+							LAD <= '0';
+							TMAX_LED <= TMAX_reg;
+							TMIN_LED <= TMIN_reg;
+							T_SENSOR_LED <= T_SENSOR;
+							ALT_LED <= ALT_reg;
+							ALT_SENSOR_LED <= ALT_SENSOR;
+							
+							if ALT_SENSOR >= ALT_reg then
+								state <= CHECK;
+							else
+								state <= BA_ON;
+							end if;
+							
+				when BC_ON =>
+				
+							BC <= '1';
+							BA <= '0';
+							LAD <= '0';
+							TMAX_LED <= TMAX_reg;
+							TMIN_LED <= TMIN_reg;
+							T_SENSOR_LED <= T_SENSOR;
+							ALT_LED <= ALT_reg;
+							ALT_SENSOR_LED <= ALT_SENSOR;
+							
+							if T_SENSOR >= TMAX_reg then
+								state <= CHECK;
+							else
+								state <= BC_ON;
+							end if;
+							
+				when LAD_ON =>
+				
+							BC <= '0';
+							BA <= '0';
+							LAD <= '1';
+							TMAX_LED <= TMAX_reg;
+							TMIN_LED <= TMIN_reg;
+							T_SENSOR_LED <= T_SENSOR;
+							ALT_LED <= ALT_reg;
+							ALT_SENSOR_LED <= ALT_SENSOR;
+							
+							if ALT_SENSOR <= ALT_reg then
+								state <= CHECK;
+							else
+								state <= LAD_ON;
+							end if;
+			end case;
+		end if;
+	end process;
+
+	
+end Behavioral;
