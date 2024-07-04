@@ -1,7 +1,6 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
---Sequence detector for detecting the sequence "1011".
---Overlapping type.
+
 entity PoolControl is
     Port ( 
 			  clock : in STD_LOGIC;
